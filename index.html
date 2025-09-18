@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Center Solar + Battery Economics Calculator</title>
+    <title>Solar Battery Economics Calculator</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -26,29 +26,16 @@
             text-align: center;
             margin-bottom: 30px;
             font-size: 2.5em;
-            background: linear-gradient(45deg, #3498db, #2c3e50);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
         
-        .debug-info {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            padding: 10px;
+        .status {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
             margin-bottom: 20px;
-            border-radius: 5px;
-            font-family: monospace;
-            font-size: 0.9em;
-            display: none;
-        }
-        
-        .tariff-selector {
-            background: #e8f4f8;
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            border-left: 5px solid #3498db;
+            text-align: center;
+            font-weight: bold;
+            color: #1976d2;
         }
         
         .inputs-grid {
@@ -174,24 +161,6 @@
             margin-bottom: 10px;
         }
         
-        .energy-breakdown {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-        }
-        
-        .breakdown-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-        }
-        
-        .breakdown-item {
-            text-align: center;
-            padding: 10px;
-        }
-        
         .assumptions {
             background: #fff3cd;
             border: 1px solid #ffeaa7;
@@ -210,36 +179,19 @@
             margin: 0;
             padding-left: 20px;
         }
-        
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            color: #7f8c8d;
-            font-size: 0.9em;
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🏢 Data Center Solar + Battery Economics</h1>
+        <h1>🏢 Solar + Battery Economics Calculator</h1>
         
-        <div id="debugInfo" class="debug-info">
-            JavaScript Status: <span id="jsStatus">Loading...</span>
+        <div id="status" class="status">
+            Loading JavaScript...
         </div>
         
         <div class="business-highlight">
-            <h4>🎯 Octopus Business Tariffs for Data Centers</h4>
-            <p><strong>Shape Shifters</strong> offers significant savings for high-consumption operations. Trial results show 100% of businesses saved money, with some achieving £2,000+ annual savings.</p>
-        </div>
-        
-        <div class="tariff-selector">
-            <h3>Select Business Tariff</h3>
-            <select id="tariffType" onchange="handleTariffChange()">
-                <option value="trio">Shape Shifters: Trio (3 guaranteed rates, 21hrs cheaper electricity)</option>
-                <option value="agile">Shape Shifters: Agile (Dynamic half-hourly pricing)</option>
-                <option value="flux">Octopus Flux (Solar + Battery optimized)</option>
-                <option value="residential">Residential Tariff (for comparison)</option>
-            </select>
+            <h4>🎯 Business Energy Cost Analysis</h4>
+            <p>Calculate the financial impact of solar panels and battery storage for your operation. This tool models 25-year savings with real UK energy tariff data.</p>
         </div>
         
         <div class="inputs-grid">
@@ -252,10 +204,6 @@
                 <div class="input-row">
                     <label for="batteryCapacity">Battery Storage (kWh)</label>
                     <input type="number" id="batteryCapacity" value="360" step="1">
-                </div>
-                <div class="input-row">
-                    <label for="batteryEfficiency">Battery Efficiency (%)</label>
-                    <input type="number" id="batteryEfficiency" value="90" step="1">
                 </div>
                 <div class="input-row">
                     <label for="continuousLoad">Continuous Load (kW)</label>
@@ -285,20 +233,16 @@
                     <label for="inflationRate">Energy Price Inflation (%)</label>
                     <input type="number" id="inflationRate" value="2.5" step="0.1">
                 </div>
-                <div class="input-row">
-                    <label for="carbonValue">Carbon Value (£/tonne CO2)</label>
-                    <input type="number" id="carbonValue" value="50" step="5">
-                </div>
             </div>
             
             <div class="input-group">
-                <h3>⚡ Tariff Rates (p/kWh)</h3>
+                <h3>⚡ Energy Rates (p/kWh)</h3>
                 <div class="input-row">
                     <label for="nightRate">Night Rate (00:00-07:00)</label>
                     <input type="number" id="nightRate" value="8.0" step="0.1">
                 </div>
                 <div class="input-row">
-                    <label for="dayRate">Day Rate (07:00-16:00, 19:00-00:00)</label>
+                    <label for="dayRate">Day Rate (other times)</label>
                     <input type="number" id="dayRate" value="18.0" step="0.1">
                 </div>
                 <div class="input-row">
@@ -306,20 +250,20 @@
                     <input type="number" id="peakRate" value="35.0" step="0.1">
                 </div>
                 <div class="input-row">
-                    <label for="exportRate">Export Rate (peak period)</label>
+                    <label for="exportRate">Export Rate</label>
                     <input type="number" id="exportRate" value="30.0" step="0.1">
-                </div>
-                <div class="input-row">
-                    <label for="standingCharge">Daily Standing Charge (£/day)</label>
-                    <input type="number" id="standingCharge" value="1.20" step="0.05">
                 </div>
             </div>
             
             <div class="input-group">
-                <h3>📊 Performance Parameters</h3>
+                <h3>📊 Performance</h3>
                 <div class="input-row">
                     <label for="solarYield">Annual Solar Yield (kWh/kWp)</label>
                     <input type="number" id="solarYield" value="950" step="10">
+                </div>
+                <div class="input-row">
+                    <label for="batteryStrategy">Battery Strategy (%)</label>
+                    <input type="number" id="batteryStrategy" value="50" step="1">
                 </div>
                 <div class="input-row">
                     <label for="solarDegradation">Solar Degradation (%/year)</label>
@@ -329,23 +273,15 @@
                     <label for="batteryDegradation">Battery Degradation (%/year)</label>
                     <input type="number" id="batteryDegradation" value="2.0" step="0.1">
                 </div>
-                <div class="input-row">
-                    <label for="batteryStrategy">Battery Usage Strategy (%)</label>
-                    <input type="number" id="batteryStrategy" value="50" step="1">
-                </div>
-                <div class="input-row">
-                    <label for="gridCarbonFactor">Grid Carbon Factor (kg CO2/kWh)</label>
-                    <input type="number" id="gridCarbonFactor" value="0.19" step="0.01">
-                </div>
             </div>
         </div>
         
-        <button class="calculate-btn" onclick="handleCalculateClick()" id="calculateButton">
-            Calculate 25-Year Business Case 🚀
+        <button class="calculate-btn" id="calculateBtn">
+            Calculate 25-Year Savings 🚀
         </button>
         
         <div id="results" class="results">
-            <h2>📈 Business Case Analysis</h2>
+            <h2>📈 Financial Analysis Results</h2>
             <div class="results-grid">
                 <div class="result-card">
                     <div class="result-value" id="totalSavings">£0</div>
@@ -368,280 +304,164 @@
                     <div class="result-label">Net Present Value</div>
                 </div>
                 <div class="result-card">
-                    <div class="result-value" id="carbonSaving">0</div>
-                    <div class="result-label">25-Year Carbon Saving (tonnes)</div>
-                </div>
-            </div>
-            
-            <div class="energy-breakdown">
-                <h3>🔋 Energy Strategy Breakdown</h3>
-                <div class="breakdown-grid">
-                    <div class="breakdown-item">
-                        <div style="font-size: 1.5em; font-weight: bold;" id="dailyLoad">0 kWh</div>
-                        <div>Daily Energy Consumption</div>
-                    </div>
-                    <div class="breakdown-item">
-                        <div style="font-size: 1.5em; font-weight: bold;" id="dailySolar">0 kWh</div>
-                        <div>Daily Solar Generation</div>
-                    </div>
-                    <div class="breakdown-item">
-                        <div style="font-size: 1.5em; font-weight: bold;" id="batteryCycles">0 kWh</div>
-                        <div>Daily Battery Cycling</div>
-                    </div>
-                    <div class="breakdown-item">
-                        <div style="font-size: 1.5em; font-weight: bold;" id="peakReduction">0%</div>
-                        <div>Peak Load Reduction</div>
-                    </div>
+                    <div class="result-value" id="dailyLoad">0</div>
+                    <div class="result-label">Daily Energy (kWh)</div>
                 </div>
             </div>
             
             <div class="assumptions">
-                <h4>📋 Business Case Assumptions</h4>
+                <h4>📋 Key Assumptions</h4>
                 <ul id="assumptionsList">
                 </ul>
             </div>
         </div>
-        
-        <div class="footer">
-            <p>Solar + Battery Economics Calculator | Based on UK Octopus Energy tariffs 2025</p>
-            <p>Adjust parameters above to model different scenarios and business cases</p>
-        </div>
     </div>
 
     <script>
-        // Debug function
-        function updateDebugInfo(message) {
-            console.log(message);
-            document.getElementById('jsStatus').textContent = message;
-        }
-
-        // Test basic functionality
-        updateDebugInfo('JavaScript loaded successfully');
-
-        // Tariff presets
-        const tariffPresets = {
-            trio: {
-                nightRate: 8.0,
-                dayRate: 18.0,
-                peakRate: 35.0,
-                exportRate: 30.0,
-                standingCharge: 1.20
-            },
-            agile: {
-                nightRate: 5.0,
-                dayRate: 15.0,
-                peakRate: 45.0,
-                exportRate: 40.0,
-                standingCharge: 1.20
-            },
-            flux: {
-                nightRate: 7.5,
-                dayRate: 23.0,
-                peakRate: 28.0,
-                exportRate: 28.0,
-                standingCharge: 0.60
-            },
-            residential: {
-                nightRate: 7.0,
-                dayRate: 24.0,
-                peakRate: 24.0,
-                exportRate: 15.0,
-                standingCharge: 0.60
-            }
-        };
-
-        function handleTariffChange() {
-            try {
-                updateDebugInfo('Tariff change triggered');
-                const tariffType = document.getElementById('tariffType').value;
-                const preset = tariffPresets[tariffType];
-                
-                document.getElementById('nightRate').value = preset.nightRate;
-                document.getElementById('dayRate').value = preset.dayRate;
-                document.getElementById('peakRate').value = preset.peakRate;
-                document.getElementById('exportRate').value = preset.exportRate;
-                document.getElementById('standingCharge').value = preset.standingCharge;
-                
-                updateDebugInfo('Tariff rates updated successfully');
-            } catch (error) {
-                updateDebugInfo('Error in tariff change: ' + error.message);
-                console.error('Tariff change error:', error);
-            }
-        }
-
-        function handleCalculateClick() {
-            try {
-                updateDebugInfo('Calculate button clicked');
-                document.getElementById('calculateButton').textContent = 'Calculating...';
-                
-                // Get all input values
-                const inputs = {
-                    solarCapacity: parseFloat(document.getElementById('solarCapacity').value),
-                    batteryCapacity: parseFloat(document.getElementById('batteryCapacity').value),
-                    batteryEfficiency: parseFloat(document.getElementById('batteryEfficiency').value) / 100,
-                    continuousLoad: parseFloat(document.getElementById('continuousLoad').value),
-                    loadFactor: parseFloat(document.getElementById('loadFactor').value) / 100,
-                    initialCost: parseFloat(document.getElementById('initialCost').value),
-                    analysisYears: parseInt(document.getElementById('analysisYears').value),
-                    discountRate: parseFloat(document.getElementById('discountRate').value) / 100,
-                    inflationRate: parseFloat(document.getElementById('inflationRate').value) / 100,
-                    carbonValue: parseFloat(document.getElementById('carbonValue').value),
-                    nightRate: parseFloat(document.getElementById('nightRate').value) / 100,
-                    dayRate: parseFloat(document.getElementById('dayRate').value) / 100,
-                    peakRate: parseFloat(document.getElementById('peakRate').value) / 100,
-                    exportRate: parseFloat(document.getElementById('exportRate').value) / 100,
-                    standingCharge: parseFloat(document.getElementById('standingCharge').value),
-                    solarYield: parseFloat(document.getElementById('solarYield').value),
-                    solarDegradation: parseFloat(document.getElementById('solarDegradation').value) / 100,
-                    batteryDegradation: parseFloat(document.getElementById('batteryDegradation').value) / 100,
-                    batteryStrategy: parseFloat(document.getElementById('batteryStrategy').value) / 100,
-                    gridCarbonFactor: parseFloat(document.getElementById('gridCarbonFactor').value)
-                };
-
-                updateDebugInfo('Inputs collected, starting calculation');
-
-                // Basic calculations
-                const dailyLoad = inputs.continuousLoad * 24 * inputs.loadFactor;
-                const annualLoad = dailyLoad * 365;
-                const annualSolarGeneration = inputs.solarCapacity * inputs.solarYield;
-                const dailySolarGeneration = annualSolarGeneration / 365;
-                
-                const nightHours = 7;
-                const dayHours = 12;
-                const peakHours = 3;
-                
-                const nightLoad = inputs.continuousLoad * nightHours * inputs.loadFactor;
-                const dayLoad = inputs.continuousLoad * dayHours * inputs.loadFactor;
-                const peakLoad = inputs.continuousLoad * peakHours * inputs.loadFactor;
-                
-                let totalSavings = 0;
-                let totalCarbonSaving = 0;
-                let cumulativeSavings = 0;
-                let paybackYear = null;
-                
-                updateDebugInfo('Starting year-by-year calculation');
-
-                for (let year = 1; year <= inputs.analysisYears; year++) {
-                    const solarPerformance = Math.pow(1 - inputs.solarDegradation, year - 1);
-                    const batteryPerformance = Math.pow(1 - inputs.batteryDegradation, year - 1);
-                    
-                    const yearSolarGeneration = annualSolarGeneration * solarPerformance;
-                    const yearDailySolar = yearSolarGeneration / 365;
-                    
-                    const effectiveBatteryCapacity = inputs.batteryCapacity * batteryPerformance;
-                    const maxBatteryUsage = effectiveBatteryCapacity * inputs.batteryStrategy;
-                    const peakLoadReduction = Math.min(peakLoad, maxBatteryUsage);
-                    
-                    const directSolarUse = Math.min(yearDailySolar, dailyLoad * 0.7);
-                    const excessSolar = Math.max(0, yearDailySolar - directSolarUse);
-                    
-                    const baselineCost = (
-                        nightLoad * inputs.nightRate +
-                        dayLoad * inputs.dayRate +
-                        peakLoad * inputs.peakRate +
-                        inputs.standingCharge
-                    ) * 365;
-                    
-                    const nightCharging = peakLoadReduction;
-                    const adjustedNightLoad = nightLoad + nightCharging;
-                    const adjustedPeakLoad = peakLoad - peakLoadReduction;
-                    const adjustedDayLoad = dayLoad - directSolarUse;
-                    
-                    const optimizedCost = (
-                        adjustedNightLoad * inputs.nightRate +
-                        Math.max(0, adjustedDayLoad) * inputs.dayRate +
-                        adjustedPeakLoad * inputs.peakRate +
-                        inputs.standingCharge
-                    ) * 365;
-                    
-                    const peakExport = Math.min(excessSolar, inputs.solarCapacity * 2);
-                    const exportEarnings = peakExport * inputs.exportRate * 365;
-                    
-                    const carbonSaving = (directSolarUse + peakLoadReduction) * 365 * inputs.gridCarbonFactor / 1000;
-                    const carbonValue = carbonSaving * inputs.carbonValue;
-                    
-                    const inflationFactor = Math.pow(1 + inputs.inflationRate, year - 1);
-                    const annualSavings = (baselineCost - optimizedCost + exportEarnings + carbonValue) * inflationFactor;
-                    
-                    const discountFactor = Math.pow(1 + inputs.discountRate, year);
-                    const presentValue = annualSavings / discountFactor;
-                    
-                    totalSavings += presentValue;
-                    totalCarbonSaving += carbonSaving;
-                    cumulativeSavings += annualSavings;
-                    
-                    if (!paybackYear && cumulativeSavings >= inputs.initialCost) {
-                        paybackYear = year + (inputs.initialCost - (cumulativeSavings - annualSavings)) / annualSavings;
-                    }
-                }
-
-                updateDebugInfo('Calculation complete, updating display');
-
-                // Calculate final metrics
-                const netPresentValue = totalSavings - inputs.initialCost;
-                const averageAnnualSavings = totalSavings / inputs.analysisYears;
-                const roi = (totalSavings / inputs.initialCost - 1) * 100;
-                const peakReductionPercent = (Math.min(peakLoad, inputs.batteryCapacity * inputs.batteryStrategy) / peakLoad) * 100;
-                
-                // Update display
-                document.getElementById('totalSavings').textContent = '£' + Math.round(totalSavings).toLocaleString();
-                document.getElementById('annualSavings').textContent = '£' + Math.round(averageAnnualSavings).toLocaleString();
-                document.getElementById('paybackPeriod').textContent = paybackYear ? paybackYear.toFixed(1) + ' years' : '> ' + inputs.analysisYears + ' years';
-                document.getElementById('roi').textContent = roi.toFixed(1) + '%';
-                document.getElementById('npv').textContent = '£' + Math.round(netPresentValue).toLocaleString();
-                document.getElementById('carbonSaving').textContent = Math.round(totalCarbonSaving).toLocaleString();
-                
-                document.getElementById('dailyLoad').textContent = Math.round(dailyLoad).toLocaleString() + ' kWh';
-                document.getElementById('dailySolar').textContent = Math.round(dailySolarGeneration).toLocaleString() + ' kWh';
-                document.getElementById('batteryCycles').textContent = Math.round(inputs.batteryCapacity * inputs.batteryStrategy).toLocaleString() + ' kWh';
-                document.getElementById('peakReduction').textContent = peakReductionPercent.toFixed(1) + '%';
-                
-                // Update assumptions
-                const tariffType = document.getElementById('tariffType').value;
-                const tariffNames = {
-                    trio: 'Shape Shifters: Trio',
-                    agile: 'Shape Shifters: Agile',
-                    flux: 'Octopus Flux',
-                    residential: 'Residential Tariff'
-                };
-                
-                document.getElementById('assumptionsList').innerHTML = `
-                    <li>Tariff: ${tariffNames[tariffType]} with optimized load shifting strategy</li>
-                    <li>Facility runs 24/7 at ${(inputs.loadFactor * 100).toFixed(0)}% load factor (${Math.round(dailyLoad).toLocaleString()} kWh/day)</li>
-                    <li>Battery cycles ${(inputs.batteryStrategy * 100).toFixed(0)}% of capacity daily for peak shaving</li>
-                    <li>Peak load reduction: ${peakReductionPercent.toFixed(1)}% during 16:00-19:00 window</li>
-                    <li>Solar self-consumption: ${Math.round((directSolarUse/dailyLoad)*100)}% of daily generation</li>
-                    <li>Energy prices inflate at ${(inputs.inflationRate * 100).toFixed(1)}% annually</li>
-                    <li>Carbon value: £${inputs.carbonValue}/tonne CO2 (${Math.round(totalCarbonSaving).toLocaleString()} tonnes saved)</li>
-                    <li>System degradation: Solar ${(inputs.solarDegradation * 100).toFixed(1)}%/year, Battery ${(inputs.batteryDegradation * 100).toFixed(1)}%/year</li>
-                `;
-                
-                // Show results
-                document.getElementById('results').style.display = 'block';
-                document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
-                
-                document.getElementById('calculateButton').textContent = 'Calculate 25-Year Business Case 🚀';
-                updateDebugInfo('Display updated successfully');
-                
-            } catch (error) {
-                updateDebugInfo('Error in calculation: ' + error.message);
-                console.error('Calculation error:', error);
-                alert('Error in calculation: ' + error.message);
-                document.getElementById('calculateButton').textContent = 'Calculate 25-Year Business Case 🚀';
-            }
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            updateDebugInfo('Page loaded, initializing...');
-            handleTariffChange();
-            updateDebugInfo('Ready for use');
+        (function() {
+            'use strict';
             
-            // Hide debug info after 3 seconds
-            setTimeout(function() {
-                document.getElementById('debugInfo').style.display = 'none';
-            }, 3000);
-        });
+            function updateStatus(message) {
+                const statusEl = document.getElementById('status');
+                if (statusEl) {
+                    statusEl.textContent = message;
+                    console.log(message);
+                }
+            }
+
+            function calculate() {
+                try {
+                    updateStatus('Calculating...');
+                    
+                    // Get all inputs
+                    const getValue = (id) => parseFloat(document.getElementById(id).value) || 0;
+                    
+                    const inputs = {
+                        solarCapacity: getValue('solarCapacity'),
+                        batteryCapacity: getValue('batteryCapacity'),
+                        continuousLoad: getValue('continuousLoad'),
+                        loadFactor: getValue('loadFactor') / 100,
+                        initialCost: getValue('initialCost'),
+                        analysisYears: parseInt(getValue('analysisYears')),
+                        discountRate: getValue('discountRate') / 100,
+                        inflationRate: getValue('inflationRate') / 100,
+                        nightRate: getValue('nightRate') / 100,
+                        dayRate: getValue('dayRate') / 100,
+                        peakRate: getValue('peakRate') / 100,
+                        exportRate: getValue('exportRate') / 100,
+                        solarYield: getValue('solarYield'),
+                        batteryStrategy: getValue('batteryStrategy') / 100,
+                        solarDegradation: getValue('solarDegradation') / 100,
+                        batteryDegradation: getValue('batteryDegradation') / 100
+                    };
+
+                    // Basic calculations
+                    const dailyLoad = inputs.continuousLoad * 24 * inputs.loadFactor;
+                    const annualSolarGeneration = inputs.solarCapacity * inputs.solarYield;
+                    const dailySolar = annualSolarGeneration / 365;
+                    
+                    // Load distribution (24/7 operation)
+                    const nightLoad = inputs.continuousLoad * 7 * inputs.loadFactor; // 7 hours
+                    const dayLoad = inputs.continuousLoad * 14 * inputs.loadFactor;  // 14 hours (7-16, 19-24)
+                    const peakLoad = inputs.continuousLoad * 3 * inputs.loadFactor;  // 3 hours (16-19)
+                    
+                    let totalSavings = 0;
+                    let cumulativeSavings = 0;
+                    let paybackYear = null;
+                    
+                    // Year by year calculation
+                    for (let year = 1; year <= inputs.analysisYears; year++) {
+                        const solarPerformance = Math.pow(1 - inputs.solarDegradation, year - 1);
+                        const batteryPerformance = Math.pow(1 - inputs.batteryDegradation, year - 1);
+                        
+                        const yearSolar = annualSolarGeneration * solarPerformance;
+                        const yearDailySolar = yearSolar / 365;
+                        const effectiveBattery = inputs.batteryCapacity * batteryPerformance;
+                        
+                        // Energy strategy
+                        const maxBatteryUse = effectiveBattery * inputs.batteryStrategy;
+                        const peakReduction = Math.min(peakLoad, maxBatteryUse);
+                        const solarSelfUse = Math.min(yearDailySolar, dailyLoad * 0.6);
+                        const excessSolar = Math.max(0, yearDailySolar - solarSelfUse);
+                        
+                        // Cost calculations
+                        const baselineCost = (
+                            nightLoad * inputs.nightRate +
+                            dayLoad * inputs.dayRate +
+                            peakLoad * inputs.peakRate
+                        ) * 365;
+                        
+                        const optimizedCost = (
+                            (nightLoad + peakReduction) * inputs.nightRate +
+                            Math.max(0, dayLoad - solarSelfUse) * inputs.dayRate +
+                            (peakLoad - peakReduction) * inputs.peakRate
+                        ) * 365;
+                        
+                        const exportEarnings = Math.min(excessSolar, inputs.solarCapacity * 2) * inputs.exportRate * 365;
+                        
+                        const inflationFactor = Math.pow(1 + inputs.inflationRate, year - 1);
+                        const annualSavings = (baselineCost - optimizedCost + exportEarnings) * inflationFactor;
+                        
+                        const discountFactor = Math.pow(1 + inputs.discountRate, year);
+                        const presentValue = annualSavings / discountFactor;
+                        
+                        totalSavings += presentValue;
+                        cumulativeSavings += annualSavings;
+                        
+                        if (!paybackYear && cumulativeSavings >= inputs.initialCost) {
+                            paybackYear = year;
+                        }
+                    }
+                    
+                    // Calculate metrics
+                    const netPresentValue = totalSavings - inputs.initialCost;
+                    const averageAnnualSavings = totalSavings / inputs.analysisYears;
+                    const roi = (totalSavings / inputs.initialCost - 1) * 100;
+                    
+                    // Update display
+                    document.getElementById('totalSavings').textContent = '£' + Math.round(totalSavings).toLocaleString();
+                    document.getElementById('annualSavings').textContent = '£' + Math.round(averageAnnualSavings).toLocaleString();
+                    document.getElementById('paybackPeriod').textContent = paybackYear ? paybackYear + ' years' : '> ' + inputs.analysisYears + ' years';
+                    document.getElementById('roi').textContent = roi.toFixed(1) + '%';
+                    document.getElementById('npv').textContent = '£' + Math.round(netPresentValue).toLocaleString();
+                    document.getElementById('dailyLoad').textContent = Math.round(dailyLoad).toLocaleString();
+                    
+                    // Update assumptions
+                    document.getElementById('assumptionsList').innerHTML = `
+                        <li>24/7 operation at ${(inputs.loadFactor * 100).toFixed(0)}% load factor (${Math.round(dailyLoad).toLocaleString()} kWh/day)</li>
+                        <li>Battery cycles ${(inputs.batteryStrategy * 100).toFixed(0)}% of capacity for peak shaving</li>
+                        <li>Solar self-consumption: ${Math.round((Math.min(dailySolar, dailyLoad * 0.6)/dailyLoad)*100)}% of daily generation</li>
+                        <li>Energy prices inflate at ${(inputs.inflationRate * 100).toFixed(1)}% annually</li>
+                        <li>Discount rate: ${(inputs.discountRate * 100).toFixed(1)}% for NPV calculation</li>
+                        <li>System degradation: Solar ${(inputs.solarDegradation * 100).toFixed(1)}%/year, Battery ${(inputs.batteryDegradation * 100).toFixed(1)}%/year</li>
+                    `;
+                    
+                    // Show results
+                    document.getElementById('results').style.display = 'block';
+                    document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+                    
+                    updateStatus('Calculation complete!');
+                    
+                } catch (error) {
+                    updateStatus('Error: ' + error.message);
+                    console.error('Calculation error:', error);
+                }
+            }
+
+            // Initialize when page loads
+            document.addEventListener('DOMContentLoaded', function() {
+                updateStatus('Calculator ready! Adjust parameters and click Calculate.');
+                
+                const button = document.getElementById('calculateBtn');
+                if (button) {
+                    button.addEventListener('click', calculate);
+                    updateStatus('Calculator loaded successfully - click button to calculate');
+                } else {
+                    updateStatus('Error: Button not found');
+                }
+            });
+
+        })();
     </script>
 </body>
 </html>
