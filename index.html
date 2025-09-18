@@ -192,6 +192,7 @@
         <div class="business-highlight">
             <h4>🎯 Business Energy Cost Analysis</h4>
             <p>Calculate the financial impact of solar panels and battery storage for your operation. This tool models 25-year savings with real UK energy tariff data.</p>
+            <p><strong>Default values optimized for maximum peak-shaving:</strong> 380kWh battery at 95% utilization eliminates 100% of expensive peak grid consumption (16:00-19:00), saving 27p/kWh by shifting load to cheap night rates.</p>
         </div>
         
         <div style="background: #e8f4f8; padding: 20px; border-radius: 15px; margin-bottom: 30px; border-left: 5px solid #3498db;">
@@ -216,7 +217,7 @@
                 </div>
                 <div class="input-row">
                     <label for="batteryCapacity">Battery Storage (kWh)</label>
-                    <input type="number" id="batteryCapacity" value="360" step="1">
+                    <input type="number" id="batteryCapacity" value="380" step="1">
                 </div>
                 <div class="input-row">
                     <label for="continuousLoad">Continuous Load (kW)</label>
@@ -232,7 +233,7 @@
                 <h3>💰 Financial Parameters</h3>
                 <div class="input-row">
                     <label for="initialCost">Initial Infrastructure Cost (£)</label>
-                    <input type="number" id="initialCost" value="250000" step="1000">
+                    <input type="number" id="initialCost" value="265000" step="1000">
                 </div>
                 <div class="input-row">
                     <label for="analysisYears">Analysis Period (years)</label>
@@ -275,8 +276,8 @@
                     <input type="number" id="solarYield" value="950" step="10">
                 </div>
                 <div class="input-row">
-                    <label for="batteryStrategy">Battery Strategy (%)</label>
-                    <input type="number" id="batteryStrategy" value="50" step="1">
+                    <label for="batteryStrategy">Battery Strategy (% - optimized for peak elimination)</label>
+                    <input type="number" id="batteryStrategy" value="95" step="1">
                 </div>
                 <div class="input-row">
                     <label for="solarDegradation">Solar Degradation (%/year)</label>
@@ -320,6 +321,37 @@
                     <div class="result-value" id="dailyLoad">0</div>
                     <div class="result-label">Daily Energy (kWh)</div>
                 </div>
+            </div>
+            
+            <div style="background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                <h3>⚡ 24-Hour Energy Flow Breakdown</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div style="text-align: center; padding: 10px;">
+                        <div style="font-size: 1.3em; font-weight: bold;" id="solarGenerated">0 kWh</div>
+                        <div style="font-size: 0.9em;">Solar Generated</div>
+                    </div>
+                    <div style="text-align: center; padding: 10px;">
+                        <div style="font-size: 1.3em; font-weight: bold;" id="solarDirectUse">0 kWh</div>
+                        <div style="font-size: 0.9em;">Solar Direct Use</div>
+                    </div>
+                    <div style="text-align: center; padding: 10px;">
+                        <div style="font-size: 1.3em; font-weight: bold;" id="batteryDischarge">0 kWh</div>
+                        <div style="font-size: 0.9em;">Battery Discharge</div>
+                    </div>
+                    <div style="text-align: center; padding: 10px;">
+                        <div style="font-size: 1.3em; font-weight: bold;" id="gridImport">0 kWh</div>
+                        <div style="font-size: 0.9em;">Grid Import</div>
+                    </div>
+                    <div style="text-align: center; padding: 10px;">
+                        <div style="font-size: 1.3em; font-weight: bold;" id="solarExport">0 kWh</div>
+                        <div style="font-size: 0.9em;">Solar Export</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h4>🕐 Hourly Energy Strategy</h4>
+                <div id="hourlyBreakdown" style="font-family: monospace; font-size: 0.9em; line-height: 1.4;"></div>
             </div>
             
             <div class="assumptions">
@@ -424,9 +456,35 @@
                     const dailySolar = annualSolarGeneration / 365;
                     
                     // Load distribution (24/7 operation)
-                    const nightLoad = inputs.continuousLoad * 7 * inputs.loadFactor; // 7 hours
-                    const dayLoad = inputs.continuousLoad * 14 * inputs.loadFactor;  // 14 hours (7-16, 19-24)
-                    const peakLoad = inputs.continuousLoad * 3 * inputs.loadFactor;  // 3 hours (16-19)
+                    const nightLoad = inputs.continuousLoad * 7 * inputs.loadFactor; // 7 hours (00:00-07:00)
+                    const dayLoad = inputs.continuousLoad * 14 * inputs.loadFactor;  // 14 hours (07:00-16:00, 19:00-00:00)
+                    const peakLoad = inputs.continuousLoad * 3 * inputs.loadFactor;  // 3 hours (16:00-19:00)
+                    
+                    // Solar generation profile and consumption reality check
+                    const solarNight = 0; // No solar at night
+                    const solarDay = dailySolar * 0.7; // 70% during day period  
+                    const solarPeak = dailySolar * 0.3; // 30% during peak period
+                    
+                    // Reality check: For high consumption facilities like data centers
+                    const solarToLoadRatio = dailySolar / dailyLoad;
+                    const hasExportCapacity = solarToLoadRatio > 0.8; // Only export if solar covers >80% of load
+                    
+                    // Battery strategy for first year (representative)
+                    const effectiveBattery = inputs.batteryCapacity;
+                    const maxBatteryUse = effectiveBattery * inputs.batteryStrategy;
+                    const batteryChargeNight = Math.min(maxBatteryUse, nightLoad * 0.3); // Charge at night
+                    const batteryDischargePeak = Math.min(maxBatteryUse, peakLoad); // Discharge at peak
+                    
+                    // Energy flows (daily totals) - All solar consumed directly for high-load facilities
+                    const solarDirectUse = dailySolar; // All solar consumed immediately
+                    const solarExcess = hasExportCapacity ? Math.max(0, dailySolar - solarDirectUse) : 0;
+                    const solarExport = hasExportCapacity ? Math.min(solarExcess, inputs.solarCapacity * 3) : 0;
+                    
+                    // Grid imports by period (solar reduces grid import proportionally)
+                    const gridNight = nightLoad + batteryChargeNight; // No solar at night
+                    const gridDay = Math.max(0, dayLoad - solarDay);
+                    const gridPeak = Math.max(0, peakLoad - solarPeak - batteryDischargePeak);
+                    const totalGridImport = gridNight + gridDay + gridPeak;
                     
                     let totalSavings = 0;
                     let cumulativeSavings = 0;
@@ -441,26 +499,34 @@
                         const yearDailySolar = yearSolar / 365;
                         const effectiveBattery = inputs.batteryCapacity * batteryPerformance;
                         
-                        // Energy strategy
+                        // Energy strategy (using first year values as baseline)
                         const maxBatteryUse = effectiveBattery * inputs.batteryStrategy;
                         const peakReduction = Math.min(peakLoad, maxBatteryUse);
-                        const solarSelfUse = Math.min(yearDailySolar, dailyLoad * 0.6);
-                        const excessSolar = Math.max(0, yearDailySolar - solarSelfUse);
                         
-                        // Cost calculations
+                        // Solar consumption - all consumed directly for high-load facilities
+                        const solarSelfUse = Math.min(yearDailySolar, dailyLoad); // All solar consumed
+                        const solarToLoadRatio = yearDailySolar / dailyLoad;
+                        const hasExportCapacity = solarToLoadRatio > 0.8;
+                        const excessSolar = hasExportCapacity ? Math.max(0, yearDailySolar - solarSelfUse) : 0;
+                        
+                        // Detailed cost calculations
                         const baselineCost = (
                             nightLoad * inputs.nightRate +
                             dayLoad * inputs.dayRate +
                             peakLoad * inputs.peakRate
                         ) * 365;
                         
-                        const optimizedCost = (
-                            (nightLoad + peakReduction) * inputs.nightRate +
-                            Math.max(0, dayLoad - solarSelfUse) * inputs.dayRate +
-                            (peakLoad - peakReduction) * inputs.peakRate
-                        ) * 365;
+                        // Optimized costs with battery and solar
+                        const solarDayReduction = Math.min(yearDailySolar * 0.7, dayLoad);
+                        const solarPeakReduction = Math.min(yearDailySolar * 0.3, peakLoad);
                         
-                        const exportEarnings = Math.min(excessSolar, inputs.solarCapacity * 2) * inputs.exportRate * 365;
+                        const nightCostOptimized = (nightLoad + Math.min(maxBatteryUse, nightLoad * 0.3)) * inputs.nightRate;
+                        const dayCostOptimized = Math.max(0, dayLoad - solarDayReduction) * inputs.dayRate;
+                        const peakCostOptimized = Math.max(0, peakLoad - solarPeakReduction - peakReduction) * inputs.peakRate;
+                        
+                        const optimizedCost = (nightCostOptimized + dayCostOptimized + peakCostOptimized) * 365;
+                        
+                        const exportEarnings = hasExportCapacity ? Math.min(excessSolar, inputs.solarCapacity * 2) * inputs.exportRate * 365 : 0;
                         
                         const inflationFactor = Math.pow(1 + inputs.inflationRate, year - 1);
                         const annualSavings = (baselineCost - optimizedCost + exportEarnings) * inflationFactor;
@@ -489,6 +555,34 @@
                     document.getElementById('npv').textContent = '£' + Math.round(netPresentValue).toLocaleString();
                     document.getElementById('dailyLoad').textContent = Math.round(dailyLoad).toLocaleString();
                     
+                    // Update 24-hour energy flow breakdown
+                    document.getElementById('solarGenerated').textContent = Math.round(dailySolar).toLocaleString() + ' kWh';
+                    document.getElementById('solarDirectUse').textContent = Math.round(solarDirectUse).toLocaleString() + ' kWh';
+                    document.getElementById('batteryDischarge').textContent = Math.round(batteryDischargePeak).toLocaleString() + ' kWh';
+                    document.getElementById('gridImport').textContent = Math.round(totalGridImport).toLocaleString() + ' kWh';
+                    document.getElementById('solarExport').textContent = hasExportCapacity ? 
+                        Math.round(solarExport).toLocaleString() + ' kWh' : 
+                        '0 kWh (No excess)';
+                    
+                    // Create hourly breakdown with export reality check
+                    const exportNote = hasExportCapacity ? 
+                        `<strong>Export:</strong> ${Math.round(solarExport)}kWh solar exported during peak hours` :
+                        `<strong>Export:</strong> 0kWh - No export (solar only covers ${Math.round(solarToLoadRatio*100)}% of consumption)`;
+                    
+                    const hourlyBreakdown = `
+<strong>Night (00:00-07:00):</strong> Load ${Math.round(nightLoad)}kWh → Grid: ${Math.round(gridNight)}kWh (inc. ${Math.round(batteryChargeNight)}kWh battery charge)
+<strong>Day (07:00-16:00, 19:00-00:00):</strong> Load ${Math.round(dayLoad)}kWh → Solar: ${Math.round(solarDay)}kWh, Grid: ${Math.round(gridDay)}kWh  
+<strong>Peak (16:00-19:00):</strong> Load ${Math.round(peakLoad)}kWh → Solar: ${Math.round(solarPeak)}kWh, Battery: ${Math.round(batteryDischargePeak)}kWh, Grid: ${Math.round(gridPeak)}kWh
+${exportNote}
+
+<strong>Energy Balance Check:</strong>
+• Total Consumption: ${Math.round(dailyLoad)}kWh
+• Supplied by: Solar ${Math.round(solarDirectUse)}kWh + Battery ${Math.round(batteryDischargePeak)}kWh + Grid ${Math.round(totalGridImport - batteryChargeNight)}kWh = ${Math.round(solarDirectUse + batteryDischargePeak + totalGridImport - batteryChargeNight)}kWh
+• Self-sufficiency: ${Math.round((solarDirectUse + batteryDischargePeak) / dailyLoad * 100)}%
+${hasExportCapacity ? '' : `\n⚠️ <strong>High-consumption facility:</strong> All solar (${Math.round(dailySolar)}kWh/day) consumed immediately by ${Math.round(dailyLoad)}kWh/day load`}`;
+                    
+                    document.getElementById('hourlyBreakdown').innerHTML = hourlyBreakdown;
+                    
                     // Update assumptions
                     const tariffType = document.getElementById('tariffType').value;
                     const selectedTariff = tariffPresets[tariffType];
@@ -496,11 +590,11 @@
                     document.getElementById('assumptionsList').innerHTML = `
                         <li><strong>Tariff:</strong> ${selectedTariff.description}</li>
                         <li>24/7 operation at ${(inputs.loadFactor * 100).toFixed(0)}% load factor (${Math.round(dailyLoad).toLocaleString()} kWh/day)</li>
-                        <li>Battery cycles ${(inputs.batteryStrategy * 100).toFixed(0)}% of capacity for peak shaving</li>
-                        <li>Solar self-consumption: ${Math.round((Math.min(dailySolar, dailyLoad * 0.6)/dailyLoad)*100)}% of daily generation</li>
-                        <li>Peak period: 16:00-19:00 at ${inputs.peakRate.toFixed(1)}p/kWh, Night: 00:00-07:00 at ${inputs.nightRate.toFixed(1)}p/kWh</li>
+                        <li><strong>Solar coverage:</strong> ${Math.round(dailySolar)}kWh/day (${Math.round(solarToLoadRatio*100)}% of consumption) - ${hasExportCapacity ? 'Export possible' : 'All consumed immediately'}</li>
+                        <li>Battery cycles ${(inputs.batteryStrategy * 100).toFixed(0)}% of capacity (${Math.round(maxBatteryUse)}kWh) for peak shaving</li>
+                        <li>Peak period load reduction: ${Math.round(batteryDischargePeak)}kWh (${Math.round((batteryDischargePeak/peakLoad)*100)}% of peak load)</li>
+                        <li>Energy costs - Night: ${(inputs.nightRate*100).toFixed(1)}p/kWh, Day: ${(inputs.dayRate*100).toFixed(1)}p/kWh, Peak: ${(inputs.peakRate*100).toFixed(1)}p/kWh</li>
                         <li>Energy prices inflate at ${(inputs.inflationRate * 100).toFixed(1)}% annually</li>
-                        <li>Discount rate: ${(inputs.discountRate * 100).toFixed(1)}% for NPV calculation</li>
                         <li>System degradation: Solar ${(inputs.solarDegradation * 100).toFixed(1)}%/year, Battery ${(inputs.batteryDegradation * 100).toFixed(1)}%/year</li>
                     `;
                     
