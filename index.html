@@ -194,6 +194,19 @@
             <p>Calculate the financial impact of solar panels and battery storage for your operation. This tool models 25-year savings with real UK energy tariff data.</p>
         </div>
         
+        <div style="background: #e8f4f8; padding: 20px; border-radius: 15px; margin-bottom: 30px; border-left: 5px solid #3498db;">
+            <h3>Select Business Tariff</h3>
+            <select id="tariffType" style="width: 100%; padding: 12px; border: 2px solid #e0e6ed; border-radius: 8px; font-size: 1em;">
+                <option value="trio">Shape Shifters: Trio (3 guaranteed rates, 21hrs cheaper electricity)</option>
+                <option value="agile">Shape Shifters: Agile (Dynamic half-hourly pricing)</option>
+                <option value="flux">Octopus Flux (Solar + Battery optimized)</option>
+                <option value="residential">Residential Tariff (for comparison)</option>
+            </select>
+            <p style="margin-top: 10px; color: #666; font-size: 0.9em;">
+                <strong>Shape Shifters:</strong> Trial results show 100% of businesses saved money, with some achieving £2,000+ annual savings.
+            </p>
+        </div>
+        
         <div class="inputs-grid">
             <div class="input-group">
                 <h3>⚡ System Specifications</h3>
@@ -321,6 +334,56 @@
         (function() {
             'use strict';
             
+            // Tariff presets based on current UK rates
+            const tariffPresets = {
+                trio: {
+                    nightRate: 8.0,      // Night rate (00:00-07:00)
+                    dayRate: 18.0,       // Day rate (07:00-16:00, 19:00-00:00)
+                    peakRate: 35.0,      // Peak rate (16:00-19:00)
+                    exportRate: 30.0,    // Export rate during peak
+                    description: "Shape Shifters: Trio - 21 hours of cheaper electricity daily"
+                },
+                agile: {
+                    nightRate: 5.0,      // Can go negative on agile
+                    dayRate: 15.0,       // Variable based on wholesale
+                    peakRate: 45.0,      // Higher volatility on agile
+                    exportRate: 40.0,    // Higher export potential
+                    description: "Shape Shifters: Agile - Dynamic half-hourly pricing"
+                },
+                flux: {
+                    nightRate: 7.5,      // Off-peak charging (02:00-05:00)
+                    dayRate: 23.0,       // Standard rate
+                    peakRate: 28.0,      // Peak rate (16:00-19:00)
+                    exportRate: 28.0,    // Matched export rate
+                    description: "Octopus Flux - Solar and battery optimized"
+                },
+                residential: {
+                    nightRate: 7.0,      // Economy 7 night rate
+                    dayRate: 24.0,       // Standard domestic rate
+                    peakRate: 24.0,      // No peak differential
+                    exportRate: 15.0,    // Standard export rate
+                    description: "Residential Tariff - For comparison"
+                }
+            };
+            
+            function updateTariffRates() {
+                try {
+                    const tariffType = document.getElementById('tariffType').value;
+                    const preset = tariffPresets[tariffType];
+                    
+                    if (preset) {
+                        document.getElementById('nightRate').value = preset.nightRate;
+                        document.getElementById('dayRate').value = preset.dayRate;
+                        document.getElementById('peakRate').value = preset.peakRate;
+                        document.getElementById('exportRate').value = preset.exportRate;
+                        
+                        updateStatus(`Tariff updated: ${preset.description}`);
+                    }
+                } catch (error) {
+                    updateStatus('Error updating tariff: ' + error.message);
+                }
+            }
+            
             function updateStatus(message) {
                 const statusEl = document.getElementById('status');
                 if (statusEl) {
@@ -427,10 +490,15 @@
                     document.getElementById('dailyLoad').textContent = Math.round(dailyLoad).toLocaleString();
                     
                     // Update assumptions
+                    const tariffType = document.getElementById('tariffType').value;
+                    const selectedTariff = tariffPresets[tariffType];
+                    
                     document.getElementById('assumptionsList').innerHTML = `
+                        <li><strong>Tariff:</strong> ${selectedTariff.description}</li>
                         <li>24/7 operation at ${(inputs.loadFactor * 100).toFixed(0)}% load factor (${Math.round(dailyLoad).toLocaleString()} kWh/day)</li>
                         <li>Battery cycles ${(inputs.batteryStrategy * 100).toFixed(0)}% of capacity for peak shaving</li>
                         <li>Solar self-consumption: ${Math.round((Math.min(dailySolar, dailyLoad * 0.6)/dailyLoad)*100)}% of daily generation</li>
+                        <li>Peak period: 16:00-19:00 at ${inputs.peakRate.toFixed(1)}p/kWh, Night: 00:00-07:00 at ${inputs.nightRate.toFixed(1)}p/kWh</li>
                         <li>Energy prices inflate at ${(inputs.inflationRate * 100).toFixed(1)}% annually</li>
                         <li>Discount rate: ${(inputs.discountRate * 100).toFixed(1)}% for NPV calculation</li>
                         <li>System degradation: Solar ${(inputs.solarDegradation * 100).toFixed(1)}%/year, Battery ${(inputs.batteryDegradation * 100).toFixed(1)}%/year</li>
@@ -450,15 +518,29 @@
 
             // Initialize when page loads
             document.addEventListener('DOMContentLoaded', function() {
-                updateStatus('Calculator ready! Adjust parameters and click Calculate.');
+                updateStatus('Loading calculator...');
                 
+                // Set up calculate button
                 const button = document.getElementById('calculateBtn');
                 if (button) {
                     button.addEventListener('click', calculate);
-                    updateStatus('Calculator loaded successfully - click button to calculate');
                 } else {
                     updateStatus('Error: Button not found');
+                    return;
                 }
+                
+                // Set up tariff selector
+                const tariffSelector = document.getElementById('tariffType');
+                if (tariffSelector) {
+                    tariffSelector.addEventListener('change', updateTariffRates);
+                    // Initialize with default tariff
+                    updateTariffRates();
+                } else {
+                    updateStatus('Error: Tariff selector not found');
+                    return;
+                }
+                
+                updateStatus('Calculator ready! Select tariff and click Calculate.');
             });
 
         })();
